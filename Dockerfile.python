@@ -1,0 +1,136 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY lib/ ./lib/
+COPY scripts/ ./scripts/
+
+# Create directories
+RUN mkdir -p /app/models /app/logs /app/data
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Expose port for FastAPI
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Create FastAPI server
+COPY <<EOF /app/main.py
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Dict, Optional
+import sys
+import os
+sys.path.append('/app/lib')
+
+from prediction_engine import TrafficPredictor, FailurePredictor, CostOptimizer
+import uvicorn
+
+app = FastAPI(title="Predictive Auto-Scaler API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize predictors
+config = {
+    'redis_host': os.getenv('REDIS_HOST', 'localhost'),
+    'redis_port': int(os.getenv('REDIS_PORT', 6379)),
+    'db_connection': os.getenv('DATABASE_URL', 'postgresql://localhost/autoscaler')
+}
+
+traffic_predictor = TrafficPredictor(config)
+failure_predictor = FailurePredictor()
+cost_optimizer = CostOptimizer()
+
+class PredictionRequest(BaseModel):
+    resource_id: str
+    hours_ahead: int = 24
+    include_failures: bool = True
+    include_cost_optimization: bool = True
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "prediction-api"}
+
+@app.post("/predict/{resource_id}")
+async def predict_traffic(resource_id: str, request: PredictionRequest):
+    try:
+        # Get sample data and train models if needed
+        sample_data = traffic_predictor.get_recent_metrics(resource_id, hours=168)
+        
+        if len(sample_data) < 24:
+            # Train with sample data
+            traffic_predictor.train_prophet_model(sample_data, resource_id)
+            traffic_predictor.train_ensemble_model(sample_data, resource_id)
+        
+        # Generate predictions
+        predictions = traffic_predictor.predict_traffic(resource_id, hours_ahead=request.hours_ahead)
+        
+        result = {
+            'traffic_predictions': predictions,
+            'resource_id': resource_id,
+            'timestamp': int(pd.Timestamp.now().timestamp() * 1000)
+        }
+        
+        if request.include_failures:
+            health_analysis = failure_predictor.analyze_resource_health(resource_id, sample_data)
+            result['failure_predictions'] = health_analysis['failure_predictions']
+        
+        if request.include_cost_optimization:
+            current_config = {
+                'provider': 'aws',
+                'instance_type': 't3.medium',
+                'current_instances': 3
+            }
+            cost_optimization = cost_optimizer.optimize_resource_allocation(predictions, current_config)
+            result['cost_optimization'] = cost_optimization
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/anomalies/{resource_id}")
+async def detect_anomalies(resource_id: str, hours: int = 24):
+    try:
+        data = traffic_predictor.get_recent_metrics(resource_id, hours=hours)
+        anomalies = traffic_predictor.detect_anomalies(data)
+        
+        return {
+            'resource_id': resource_id,
+            'anomalies': anomalies,
+            'total_anomalies': len(anomalies)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+EOF
+
+# Run the FastAPI server
+CMD ["python", "main.py"]
