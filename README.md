@@ -42,7 +42,7 @@ An AI-powered infrastructure auto-scaling system that predicts traffic spikes be
         │                        │                        │
 ┌───────▼──────────┐  ┌─────────▼─────────┐  ┌──────────▼──────────┐
 │  ML Service      │  │  Scaling Service   │  │  Metrics Service    │
-│  (Python/FastAPI)│  │  (Rust/Actix)      │  │  (Rust/Actix)       │
+│  (Python/FastAPI)│  │  (Go/Fiber)        │  │  (Go/Fiber)         │
 │                  │  │                    │  │                     │
 │  - Prophet       │  │  - Decision engine │  │  - Aggregation      │
 │  - PyTorch LSTM  │  │  - Cost optimizer  │  │  - Anomaly detect   │
