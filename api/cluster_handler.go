@@ -81,3 +81,13 @@ func (h *ClusterHandler) GetResourceUsage(c *fiber.Ctx) error {
 		"memory_gb": float64(metrics.MemoryBytes) / 1024.0 / 1024.0 / 1024.0,
 	})
 }
+
+func (h *ClusterHandler) GetResources(c *fiber.Ctx) error {
+	resources, err := h.k8s.GetClusterResources(c.Context())
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": err.Error(),
+        })
+    }
+    return c.JSON(resources)
+}

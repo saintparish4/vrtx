@@ -59,3 +59,4 @@ type ScalingEvent struct {
 	Reason      string    `json:"reason"`
 	Success     bool      `json:"success"`
 }
+

@@ -24,7 +24,7 @@ func main() {
 	// Middleware
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.User(cors.New(cors.Config{
+	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization", 
@@ -33,7 +33,7 @@ func main() {
 	// Initialize K8s Client
 	k8sClient, err := NewK8sClient()
 	if err != nil {
-		log.Fataf("Failed to initialize K8s client: %v", err)
+		log.Fatalf("Failed to initialize K8s client: %v", err)
 	}
 
 	// Initialize Handlers
