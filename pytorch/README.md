@@ -1,24 +1,3 @@
-┌──────────────┐         ┌─────────────────┐
-│  Kubernetes  │────────▶│ Metrics         │
-│   Cluster    │ hourly  │ Collector       │
-└──────────────┘         │ (CronJob)       │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │  ML Service     │
-                         │  (FastAPI)      │
-                         │                 │
-                         │  - Prophet      │
-                         │  - SQLite       │
-                         └────────┬────────┘
-                                  │
-                                  ▼
-                         ┌─────────────────┐
-                         │  Cluster API    │
-                         │  (Go)           │
-                         └─────────────────┘
-
 ## ML Prediction Service
 Prophet-based time-series forecasting service for Kubernetes resource prediction. Analyzes historical CPU/memory patterns to enable proactive autoscaling.
 ## Features

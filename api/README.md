@@ -1,14 +1,3 @@
-┌─────────────┐      ┌──────────────────┐      ┌─────────────┐
-│   Next.js   │─────▶│  Cluster API     │─────▶│ Kubernetes  │
-│  Frontend   │      │  (This Service)  │      │   Cluster   │
-└─────────────┘      └──────────────────┘      └─────────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │  Python ML API   │
-                     │    (Prophet)     │
-                     └──────────────────┘
-
 ## Cluster Management API
 
 A **Go-based Kubernetes cluster management service** that automates pod scaling operations using ML predictions from a Python Prophet service.
