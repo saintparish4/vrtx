@@ -16,7 +16,7 @@ func (h *ClusterHandler) GetNamespaces(c *fiber.Ctx) error {
 	namespaces, err := h.k8s.GetNamespaces(c.Context())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to get namespaces",
+			"error":   "Failed to get namespaces",
 			"details": err.Error(),
 		})
 	}
@@ -33,7 +33,7 @@ func (h *ClusterHandler) GetDeployments(c *fiber.Ctx) error {
 	deployments, err := h.k8s.GetDeployments(c.Context(), namespace)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to get deployments",
+			"error":   "Failed to get deployments",
 			"details": err.Error(),
 		})
 	}
@@ -51,7 +51,7 @@ func (h *ClusterHandler) GetPods(c *fiber.Ctx) error {
 	pods, err := h.k8s.GetPods(c.Context(), namespace)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to get pods",
+			"error":   "Failed to get pods",
 			"details": err.Error(),
 		})
 	}
@@ -69,7 +69,7 @@ func (h *ClusterHandler) GetResourceUsage(c *fiber.Ctx) error {
 	metrics, err := h.k8s.GetResourceMetrics(c.Context(), namespace)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to get resource metrics",
+			"error":   "Failed to get resource metrics",
 			"details": err.Error(),
 		})
 	}
@@ -83,11 +83,10 @@ func (h *ClusterHandler) GetResourceUsage(c *fiber.Ctx) error {
 }
 
 func (h *ClusterHandler) GetResources(c *fiber.Ctx) error {
-	resources, err := h.k8s.GetClusterResources(c.Context())
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "error": err.Error(),
-        })
-    }
-    return c.JSON(resources)
+	// The method GetClusterResources does not exist on *K8sClient.
+	// You need to implement this method or call an existing method.
+	// For now, return a 501 Not Implemented error.
+	return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{
+		"error": "GetClusterResources is not implemented on K8sClient",
+	})
 }
